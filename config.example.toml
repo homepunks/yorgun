@@ -1,4 +1,4 @@
-project = "fleetpro"
+project = "yorgun"
 
 # only services listed here will be reported
 [[services]]
@@ -14,17 +14,6 @@ name = "redis"
 critical = true
 
 [[services]]
-name = "gotenberg"
-critical = false  # low severity example
-
-[[services]]
 name = "pgadmin"
-critical = false
+critical = false # low severity example
 
-[[services]]
-name = "adminer"
-critical = false
-
-[[services]]
-name = "dozzle"
-critical = false
