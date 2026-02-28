@@ -1,0 +1,30 @@
+project = "fleetpro"
+
+# only services listed here will be reported
+[[services]]
+name = "backend"
+critical = true
+
+[[services]]
+name = "postgres"
+critical = true
+
+[[services]]
+name = "redis"
+critical = true
+
+[[services]]
+name = "gotenberg"
+critical = false  # low severity example
+
+[[services]]
+name = "pgadmin"
+critical = false
+
+[[services]]
+name = "adminer"
+critical = false
+
+[[services]]
+name = "dozzle"
+critical = false
