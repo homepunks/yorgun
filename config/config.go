@@ -16,7 +16,7 @@ type Config struct {
 }
 
 type Telegram struct {
-	BotToken string // to be loaded from .env
+	BotToken string // to be loaded from environment or .env if missing
 	ChatIDs []string `toml:"chat_ids"`
 }
 
@@ -48,10 +48,16 @@ func Load(configPath, envPath string) (*Config, error) {
 		return nil, fmt.Errorf("config: at least one telegram chat_id is required")
 	}
 
-	token, err := loadEnvValue(envPath, "TG_BOT_TOKEN")
-	if err != nil {
-		return nil, fmt.Errorf("loading bot token: %w", err)
+	token := os.Getenv("TG_BOT_TOKEN")
+	if token == "" {
+		if _, err := os.Stat(envPath); err == nil {
+			token, err = loadEnvValue(envPath, "TG_BOT_TOKEN")
+			if err != nil {
+				return nil, fmt.Errorf("loading bot token: %w", err)
+			}
+		}
 	}
+
 	if token == "" {
 		return nil, fmt.Errorf("config: TG_BOT_TOKEN is not set in %s", envPath)
 	}
