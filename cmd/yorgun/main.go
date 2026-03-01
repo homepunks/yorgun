@@ -47,6 +47,9 @@ func run(configPath, envPath string) error {
 	fmt.Print(startupReport)
 
 	bot := report.NewBot(cfg.Telegram.BotToken, cfg.Telegram.ChatIDs)
+	if err := bot.Broadcast(startupReport); err != nil {
+    return fmt.Errorf("telegram: %w", err)
+	}
 	
 	msg := "yorgun started - watching [" + cfg.Project + "]"
 	if err := bot.Broadcast(msg); err != nil {
