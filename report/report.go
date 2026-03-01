@@ -3,63 +3,88 @@ package report
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/homepunks/yorgun/config"
 	"github.com/homepunks/yorgun/docker"
 )
 
-type Verdict struct {
-	docker.ContainerStatus
-	OK       bool
-	Critical bool
-	Problem  string
-}
-
-type Report struct {
-	Timestamp  time.Time
-	Verdicts   []Verdict
-	Missing    []string
-	AllHealthy bool
-	Problems   int
-}
-
-func Build(statuses []docker.ContainerStatus, cfg *config.Config) *Report {
-	r := &Report{
-		Timestamp:  time.Now(),
-		AllHealthy: true,
-	}
+func FormatStartupReport(statuses []docker.ContainerStatus, cfg *config.Config) string {
+	var b strings.Builder
 
 	byService := make(map[string]docker.ContainerStatus)
 	for _, s := range statuses {
 		byService[s.Service] = s
 	}
 
+	problems := 0
+	var lines []string
+
 	for _, svc := range cfg.Services {
 		s, found := byService[svc.Name]
 		if !found {
-			r.Missing = append(r.Missing, svc.Name)
-			r.AllHealthy = false
-			r.Problems++
+			problems++
+			lines = append(lines, fmt.Sprintf("  %-20s  NOT FOUND    container missing", svc.Name))
 			continue
 		}
 
-		v := Verdict{
-			ContainerStatus: s,
-			Critical:        svc.Critical,
+		ok, problem := evaluate(s)
+		state := strings.ToUpper(s.State)
+
+		if ok {
+			lines = append(lines, fmt.Sprintf("  %-20s  %-10s  %s", s.Service, state, s.Status))
+		} else {
+			problems++
+			marker := "⚠ "
+			if svc.Critical {
+				marker = "✖"
+			}
+			lines = append(lines, fmt.Sprintf("  %s %-17s  %-10s  %s", marker, s.Service, state, problem))
 		}
-
-		v.OK, v.Problem = evaluate(s)
-
-		if !v.OK {
-			r.AllHealthy = false
-			r.Problems++
-		}
-
-		r.Verdicts = append(r.Verdicts, v)
 	}
 
-	return r
+	if problems == 0 {
+		fmt.Fprintf(&b, "✓ yorgun — all %d containers healthy\n\n", len(cfg.Services))
+	} else {
+		fmt.Fprintf(&b, "⚠ yorgun — %d problem(s) detected\n\n", problems)
+	}
+
+	for _, line := range lines {
+		b.WriteString(line + "\n")
+	}
+
+	return b.String()
+}
+
+func FormatEvent(service, action, exitCode string, critical bool) string {
+	icon := "⚠"
+	severity := ""
+
+	switch action {
+	case "die":
+		icon = "☠"
+		if critical {
+			severity = " [CRITICAL]"
+		}
+	case "oom":
+		icon = "☒"
+		severity = " [OOM]"
+	case "stop":
+		icon = "■"
+	case "start":
+		icon = "▶"
+	case "health_status: unhealthy":
+		icon = "✚"
+	case "health_status: healthy":
+		icon = "✖"
+	}
+
+	msg := fmt.Sprintf("%s %s — %s%s", icon, service, action, severity)
+
+	if exitCode != "" && exitCode != "0" {
+		msg += fmt.Sprintf(" (exit code: %s)", exitCode)
+	}
+
+	return msg
 }
 
 func evaluate(s docker.ContainerStatus) (bool, string) {
@@ -95,59 +120,4 @@ func evaluate(s docker.ContainerStatus) (bool, string) {
 	default:
 		return false, fmt.Sprintf("unknown state: %s", s.State)
 	}
-}
-
-func (r *Report) FormatText() string {
-	var b strings.Builder
-
-	if r.AllHealthy {
-		total := len(r.Verdicts)
-		fmt.Fprintf(&b, "☑ yorgun — all %d containers healthy\n\n", total)
-	} else {
-		fmt.Fprintf(&b, "☒  yorgun — %d problem(s) detected\n\n", r.Problems)
-	}
-
-	for _, name := range r.Missing {
-		fmt.Fprintf(&b, "  %-20s  NOT FOUND    container missing\n", name)
-	}
-
-	for _, v := range r.Verdicts {
-		state := strings.ToUpper(v.State)
-		health := ""
-		if v.Health != "none" {
-			health = "(" + v.Health + ")"
-		}
-
-		if v.OK {
-			fmt.Fprintf(&b, "  %-20s  %-10s  %s %s\n",
-				v.Service, state, v.Status, health)
-		} else {
-			marker := "! "
-			if v.Critical {
-				marker = "✗"
-			}
-			fmt.Fprintf(&b, "  %s %-17s  %-10s  %s\n",
-				marker, v.Service, state, v.Problem)
-		}
-	}
-
-	return b.String()
-}
-
-func (r *Report) HasCriticalFailure() bool {
-	for _, name := range r.Missing {
-		for _, v := range r.Verdicts {
-			if v.Service == name && v.Critical {
-				return true
-			}
-		}
-	}
-
-	for _, v := range r.Verdicts {
-		if !v.OK && v.Critical {
-			return true
-		}
-	}
-
-	return false
 }
