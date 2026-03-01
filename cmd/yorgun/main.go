@@ -5,9 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"os/signal"
 	"syscall"
-	"os"
 
 	"github.com/homepunks/yorgun/config"
 	"github.com/homepunks/yorgun/docker"
@@ -48,9 +48,9 @@ func run(configPath, envPath string) error {
 
 	bot := report.NewBot(cfg.Telegram.BotToken, cfg.Telegram.ChatIDs)
 	if err := bot.Broadcast(startupReport); err != nil {
-    return fmt.Errorf("telegram: %w", err)
+		return fmt.Errorf("telegram: %w", err)
 	}
-	
+
 	msg := "yorgun started - watching [" + cfg.Project + "]"
 	if err := bot.Broadcast(msg); err != nil {
 		return fmt.Errorf("telegram: %w", err)
@@ -67,11 +67,11 @@ func run(configPath, envPath string) error {
 
 	for {
 		select {
-		case ev, ok := <- events:
+		case ev, ok := <-events:
 			if !ok {
 				return nil
 			}
-			
+
 			if !watched[ev.Service] {
 				continue
 			}
@@ -85,13 +85,13 @@ func run(configPath, envPath string) error {
 				log.Printf("telegram error: %v\n", err)
 			}
 
-		case err, ok := <- errs:
+		case err, ok := <-errs:
 			if !ok {
 				return nil
 			}
 			log.Printf("event stream error: %w\n", err)
 
-		case <- ctx.Done():
+		case <-ctx.Done():
 			log.Println("\nshutting down...")
 
 			msg := "yorgun stopped - no longer watching [" + cfg.Project + "]"

@@ -1,10 +1,10 @@
 package config
 
 import (
-	"strings"
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -16,8 +16,8 @@ type Config struct {
 }
 
 type Telegram struct {
-	BotToken string // to be loaded from environment or .env if missing
-	ChatIDs []string `toml:"chat_ids"`
+	BotToken string   // to be loaded from environment or .env if missing
+	ChatIDs  []string `toml:"chat_ids"`
 }
 
 type Service struct {

@@ -3,15 +3,15 @@ package docker
 import (
 	"context"
 	"fmt"
-	"os"
 	"log"
+	"os"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 )
 
@@ -31,10 +31,10 @@ type ContainerStatus struct {
 }
 
 type Event struct {
-	Service string
-	Action string
+	Service  string
+	Action   string
 	ExitCode string
-	Time time.Time
+	Time     time.Time
 }
 
 type Client struct {
@@ -104,7 +104,7 @@ func (c *Client) FetchAll(ctx context.Context) ([]ContainerStatus, error) {
 			Error:        inspect.State.Error,
 			OOMKilled:    inspect.State.OOMKilled,
 			RestartCount: inspect.RestartCount,
-			Health: "none",
+			Health:       "none",
 		}
 
 		if inspect.State.Health != nil {
