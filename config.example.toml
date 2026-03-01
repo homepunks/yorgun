@@ -1,5 +1,8 @@
 project = "yorgun"
 
+[telegram]
+chat_ids = ["694201337", "-1228337"]
+
 # only services listed here will be reported
 [[services]]
 name = "backend"
@@ -16,4 +19,3 @@ critical = true
 [[services]]
 name = "pgadmin"
 critical = false # low severity example
-
