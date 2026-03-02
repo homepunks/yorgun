@@ -12,6 +12,8 @@ import (
 	"github.com/homepunks/yorgun/config"
 	"github.com/homepunks/yorgun/docker"
 	"github.com/homepunks/yorgun/report"
+
+	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
 func main() {
