@@ -32,7 +32,7 @@ type getUpdatesResponse struct {
 }
 
 func (b *Bot) ListenForCommands(ctx context.Context, commands map[string]CommandHandler) {
-	offset := 0
+	offset := b.drainOldUpdates()
 
 	for {
 		select {
@@ -113,4 +113,31 @@ func (b *Bot) getUpdates(ctx context.Context, offset int) ([]update, error) {
 	}
 
 	return result.Result, nil
+}
+
+func (b *Bot) drainOldUpdates() int {
+	url := fmt.Sprintf(
+		"https://api.telegram.org/bot%s/getUpdates?offset=-1&timeout=0",
+		b.token,
+	)
+
+	resp, err := b.client.Get(url)
+	if err != nil {
+		log.Printf("draining old updates failed: %v", err)
+		return 0
+	}
+	defer resp.Body.Close()
+
+	var result getUpdatesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return 0
+	}
+
+	if len(result.Result) > 0 {
+		last := result.Result[len(result.Result)-1]
+		log.Printf("skipped %d old telegram updates", last.UpdateID)
+		return last.UpdateID + 1
+	}
+
+	return 0
 }
