@@ -13,7 +13,7 @@ import (
 type CommandHandler func() (string, error)
 
 type update struct {
-	UpdateID int      `json:"update-id"`
+	UpdateID int      `json:"update_id"`
 	Message  *message `json:"message"`
 }
 
