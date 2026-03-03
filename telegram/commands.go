@@ -2,12 +2,12 @@ package telegram
 
 import (
 	"context"
-	"net/http"
 	"encoding/json"
-	"log"
-	"time"
-	"strings"
 	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"time"
 )
 
 type CommandHandler func() (string, error)
