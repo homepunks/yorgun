@@ -12,7 +12,8 @@ import (
 	"github.com/homepunks/yorgun/config"
 	"github.com/homepunks/yorgun/docker"
 	"github.com/homepunks/yorgun/report"
-
+	"github.com/homepunks/yorgun/telegram"
+	
 	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
@@ -48,7 +49,7 @@ func run(configPath, envPath string) error {
 	startupReport := report.FormatStartupReport(statuses, cfg)
 	fmt.Print(startupReport)
 
-	bot := report.NewBot(cfg.Telegram.BotToken, cfg.Telegram.ChatIDs)
+	bot := telegram.NewBot(cfg.Telegram.BotToken, cfg.Telegram.ChatIDs)
 	if err := bot.Broadcast(startupReport); err != nil {
 		return fmt.Errorf("telegram: %w", err)
 	}
@@ -59,8 +60,20 @@ func run(configPath, envPath string) error {
 	}
 	log.Println("telegram connected - startup message sent")
 
+	commands := map[string]telegram.CommandHandler{
+		"lscon": func() (string, error) {
+			statuses, err := dc.FetchAll(context.Background())
+			if err != nil {
+				return "", err
+			}
+			return report.FormatStartupReport(statuses, cfg), nil
+		},
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	go bot.ListenForCommands(ctx, commands)
 
 	log.Println("watching for events...")
 
