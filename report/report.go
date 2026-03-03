@@ -49,7 +49,7 @@ func FormatStartupReport(statuses []docker.ContainerStatus, cfg *config.Config) 
 	}
 
 	for _, line := range lines {
-		b.WriteString(line + "\n")
+		b.WriteString(line + "\n-----------------\n")
 	}
 
 	return b.String()
