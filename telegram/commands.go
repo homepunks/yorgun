@@ -34,6 +34,11 @@ type getUpdatesResponse struct {
 func (b *Bot) ListenForCommands(ctx context.Context, commands map[string]CommandHandler) {
 	offset := b.drainOldUpdates()
 
+	allowed := make(map[string]bool, len(b.chatIDs))
+	for _, id := range b.chatIDs {
+		allowed[id] = true
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -58,6 +63,11 @@ func (b *Bot) ListenForCommands(ctx context.Context, commands map[string]Command
 				continue
 			}
 
+			chatID := fmt.Sprintf("%d", upd.Message.Chat.ID)
+			if !allowed[chatID] {
+				continue
+			}
+
 			cmd := upd.Message.Text
 			if !strings.HasPrefix(cmd, "/") {
 				continue
@@ -71,7 +81,6 @@ func (b *Bot) ListenForCommands(ctx context.Context, commands map[string]Command
 				continue
 			}
 
-			chatID := fmt.Sprintf("%d", upd.Message.Chat.ID)
 			response, err := handler()
 			if err != nil {
 				log.Printf("telegram: command /%s error: %v", cmd, err)
