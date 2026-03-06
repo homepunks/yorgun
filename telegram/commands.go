@@ -10,27 +10,6 @@ import (
 	"time"
 )
 
-type CommandHandler func() (string, error)
-
-type update struct {
-	UpdateID int      `json:"update_id"`
-	Message  *message `json:"message"`
-}
-
-type message struct {
-	Chat chat   `json:"chat"`
-	Text string `json:"text"`
-}
-
-type chat struct {
-	ID int64 `json:"id"`
-}
-
-type getUpdatesResponse struct {
-	OK     bool     `json:"ok"`
-	Result []update `json:"result"`
-}
-
 func (b *Bot) ListenForCommands(ctx context.Context, commands map[string]CommandHandler) {
 	offset := b.drainOldUpdates()
 
